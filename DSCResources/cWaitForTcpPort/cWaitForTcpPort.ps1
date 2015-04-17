@@ -36,7 +36,9 @@ function Set-TargetResource {
             Start-Sleep -Seconds $RetryIntervalSec;
         }
     } #end foreach
-    if (-not $isPortOpen) {  Write-Verbose ($localizedData.HostNotFoundRetrying -f $Hostname, $Port, $count); }
+    if (-not $isPortOpen) {
+        ThrowOperationCanceledException -ErrorId 'OperationTimeout' -ErrorMessage $localizedData.HostNotFoundTimeout;
+    }
 } #end function Set-TargetResource
 
 # The Test-TargetResource function is used to validate the AD domain is available on LDAP port 389.
@@ -49,8 +51,10 @@ function Test-TargetResource {
 		[Parameter()] [System.UInt32] $RetryCount = 10
     )
     Write-Verbose ($localizedData.TestingHostConnection -f $Hostname, $Port);
-    return TestTcpPort -HostName $Hostname -Port 389;
+    return -not (TestTcpPort -HostName $Hostname -Port $Port);
 } #end function Test-TargetResource
+
+#region Private Functions
 
 function TestTcpPort {
     <#
@@ -74,11 +78,25 @@ function TestTcpPort {
         ## Swallow 'No such host is known' errors..
         Write-Debug $_;
     }
-    catch {
-        throw "Test-TargetResource failed $_";
-    }
     finally {
         if ($null -ne $tcpPort) { $tcpPort.Close(); }
     }
     return $isPortOpen;
-}
+} #end function TestTcpPort
+
+function ThrowOperationCanceledException {
+    <#
+    .SYNOPSIS
+        Throws terminating error of category InvalidOperation with specified errorId and errorMessage.
+    #>
+    param(
+        [Parameter(Mandatory)] [System.String] $ErrorId,
+        [Parameter(Mandatory)] [System.String] $ErrorMessage
+    )
+    $errorCategory = [System.Management.Automation.ErrorCategory]::InvalidOperation;
+    $exception = New-Object -TypeName 'System.OperationCanceledException' -ArgumentList $ErrorMessage;
+    $errorRecord = New-Object -TypeName 'System.Management.Automation.ErrorRecord' -ArgumentList $exception, $ErrorId, $errorCategory, $null;
+    throw $errorRecord;
+} #end function ThrowOperationCanceledException
+
+#endregion Private Functions
