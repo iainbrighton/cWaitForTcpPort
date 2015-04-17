@@ -1,0 +1,38 @@
+TOPIC
+    about_cWaitForTcpPort
+
+SHORT DESCRIPTION
+    cWaitForTcpPort is a Desired Configuration State (DSC) resource which is
+    used to wait for a TCP port to become available.
+
+LONG DESCRIPTION
+    The cWaitForTcpPort DSC resource can be used to halt the processing of a
+    DSC configuration until a process on another host has completed.
+
+    For example, it could be used to wait for a web server or MS SQL database
+    server to become available.
+    
+    The initial implementation of this DSC resource was to wait for Active
+    Directory setup to complete. By default, the MSFT_xWaitForADDomain resource
+    has to be run on a machine with the Active Directory Remote Server
+    Administration Tools (RSAT) installed. This resource can be run on a domain
+    member - without RSAT - and can be configured to wait until the AD domain
+    LDAP port 389 becomes available. This is great for member server deployment
+    in a lab build!
+
+EXAMPLES
+
+    Configuration cWaitForLDAPDomainExample {
+
+        Import-DscResource -ModuleName cWaitForTcpPort
+    
+        cWaitForTcpPort WaitForMyExampleDomain {
+            Hostname = 'myFQDNdomain.local'
+            Port = 389
+            RetryIntervalSec = 30
+            RetryCount = 10
+        }
+    }
+
+KEYWORDS
+    DSC, DSC Resource, cWaitForTcpPort

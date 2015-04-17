@@ -1,52 +1,55 @@
-# The Get-TargetResource function is used to fetch the status of AD domain.
+Import-LocalizedData -BindingVariable localizedData -FileName Resources.psd1;
+
 function Get-TargetResource {
 	[OutputType([System.Collections.Hashtable])]
 	param (
-		[Parameter(Mandatory)] [System.String] $DomainName,
+		[Parameter(Mandatory)] [System.String] $Hostname,
+        [Parameter(Mandatory)] [System.UInt16] $Port,
 		[Parameter()] [System.UInt64] $RetryIntervalSec = 30,
 		[Parameter()] [System.UInt32] $RetryCount = 10
 	)
 	return @{
-		DomainName = $DomainName;
+		Hostname = $Hostname;
+        Port = $Port;
 		RetryIntervalSec = $RetryIntervalSec;
 		RetryCount = $RetryCount;
 	};
 } #end function Get-TargetResource
 
-# The Set-TargetResource function is used to wait until the AD domain is available on LDAP port 389.
 function Set-TargetResource {
     [CmdletBinding()]
     param (
-		[Parameter(Mandatory)] [System.String] $DomainName,
+		[Parameter(Mandatory)] [System.String] $Hostname,
+        [Parameter(Mandatory)] [System.UInt16] $Port,
 		[Parameter()] [System.UInt64] $RetryIntervalSec = 30,
 		[Parameter()] [System.UInt32] $RetryCount = 10
     )
     $isDomainFound = $false;
-    Write-Verbose -Message "Checking for domain '$DomainName' ...";
+    Write-Verbose ($localizedData.TestingHostConnection -f $Hostname, $Port);
     for ($count = 0; $count -lt $RetryCount; $count++) {
-        $isDomainFound = TestTcpPort -HostName $DomainName -Port 389;
-        if ($isDomainFound) {
+        $isPortOpen = TestTcpPort -HostName $Hostname -Port $Port;
+        if ($isPortOpen) {
             break;
         }
         else {
-            Write-Verbose -Message "Domain '$DomainName' not found. Will retry again after $RetryIntervalSec sec";
+            Write-Verbose ($localizedData.HostNotFoundRetrying -f $Hostname, $Port, $RetryIntervalSec);
             Start-Sleep -Seconds $RetryIntervalSec;
         }
     } #end foreach
-    if (-not $isDomainFound) { Write-Verbose "Domain '$DomainName' not found after $count attempts with $RetryIntervalSec sec interval"; }
-    return $isDomainFound;
+    if (-not $isPortOpen) {  Write-Verbose ($localizedData.HostNotFoundRetrying -f $Hostname, $Port, $count); }
 } #end function Set-TargetResource
 
 # The Test-TargetResource function is used to validate the AD domain is available on LDAP port 389.
 function Test-TargetResource {
     [CmdletBinding()]
     param (
-		[Parameter(Mandatory)] [System.String] $DomainName,
+		[Parameter(Mandatory)] [System.String] $Hostname,
+        [Parameter(Mandatory)] [System.UInt16] $Port,
 		[Parameter()] [System.UInt64] $RetryIntervalSec = 30,
 		[Parameter()] [System.UInt32] $RetryCount = 10
     )
-    Write-Verbose -Message "Checking for domain '$DomainName' ...";
-    return TestTcpPort -HostName $DomainName -Port 389;
+    Write-Verbose ($localizedData.TestingHostConnection -f $Hostname, $Port);
+    return TestTcpPort -HostName $Hostname -Port 389;
 } #end function Test-TargetResource
 
 function TestTcpPort {
@@ -61,9 +64,9 @@ function TestTcpPort {
     $isPortOpen = $false;
     try {
         $tcpPort = New-Object -TypeName 'System.Net.Sockets.TcpClient';
-        $tcpPort.Connect($DomainName, $Port);
+        $tcpPort.Connect($Hostname, $Port);
         if ($tcpPort.Connected) {
-            Write-Verbose -Message "Found hostname '$HostName' listening on port '$Port'";
+            Write-Verbose ($localizedData.FoundHostConnection -f $HostName, $Port);
             $isPortOpen = $true;
         }
     }
@@ -79,5 +82,3 @@ function TestTcpPort {
     }
     return $isPortOpen;
 }
-
-Export-ModuleMember -Function *-TargetResource;

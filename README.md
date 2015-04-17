@@ -1,30 +1,34 @@
 Included Resources
 ==================
-* cWaitForLDAPDomain
+* cWaitForTcpPort
 
-cWaitForLDAPDomain
+cWaitForTcpPort
 ================
-By default, the [MSFT_xWaitForADDomain](https://gallery.technet.microsoft.com/scriptcenter/xActiveDirectory-f2d573f3) resource
-has to be run on a machine with the Active Directory Remote Server Administration Tools (RSAT) installed. This resource can be
-run on a domain member - without RSAT - and will wait until the AD domain LDAP port 389 becomes available. This is great for member server deployment in a lab build!
+Waits for the availability of a TCP port on a host to become available before continuing.
+
 ###Syntax
 ```
-cWaitForLDAPDomain [string]
+cWaitForTcpPort [string]
 {
-    DomainName = [string]
-    [RetryIntervalSec = [int]]
-    [RetryCount = [int]]
+    Hostname = [string]
+    Port = [uint16]
+    [RetryIntervalSec = [uint64]]
+    [RetryCount = [uint32]]
+}
 ```
-The DomainName property can be the Active Directory's FQDN, a domain controller's FQDN or the IP address of a domain controller.
-
-The defaults are set to retry every 30 seconds with a maximum retry count of 10 - totalling 5 minutes.
+###Properties
+* Hostname: IP address, FQDN or NetBIOS name of the host to wait for.
+* Port: TCP port number on the host to wait for.
+* RetryIntervalSec: Number of seconds to wait before retrying the connection. If unspecified, this value defaults to 30 seconds.
+* RetryCount: Number of rety attempts before giving up. If unspecified, this value defaults to 10 retries.
 
 ###Configuration
 ```
 Configuration cWaitForLDAPDomainExample {
-    Import-DscResource -ModuleName cWaitForLDAPDomain
-    cWaitForLDAPDomain MyExampleDomain {
-        DomainName = 'myFQDNdomain.local'
+    Import-DscResource -ModuleName cWaitForTcpPort
+    cWaitForTcpPort WaitForMyExampleDomain {
+        Hostname = 'myFQDNdomain.local'
+        Port = 389
         RetryIntervalSec = 30
         RetryCount = 10
     }
