@@ -51,7 +51,7 @@ function Test-TargetResource {
 		[Parameter()] [System.UInt32] $RetryCount = 10
     )
     Write-Verbose ($localizedData.TestingHostConnection -f $Hostname, $Port);
-    return -not (TestTcpPort -HostName $Hostname -Port $Port);
+    return (TestTcpPort -HostName $Hostname -Port $Port);
 } #end function Test-TargetResource
 
 #region Private Functions
